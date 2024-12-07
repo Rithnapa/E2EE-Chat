@@ -295,10 +295,11 @@ export default function PlusBoxChatRoom({
         return;
       }
   
-      const userData = userDoc.data();
-      const decryptedTel = userData.tel
-        ? await KeymanagementInstance.decryptData(userData.tel)
-        : null;
+        const userData = userDoc.data();
+        const decryptedTel = userData.tel
+          ? await KeymanagementInstance.decryptData(userData.tel)
+          : null;
+        // const decryptedTel = userData.tel;
   
       setState(prevState => ({
         ...prevState,

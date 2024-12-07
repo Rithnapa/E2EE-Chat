@@ -67,8 +67,54 @@ export default function ChatRoom1({navigation}) {
       };
     }, [navigation]),
   );
+  // Changehere
+  // useEffect(() => {
+  //   if (user) {
+  //     createRoomIfNotExists();
+  //     fetchUserProfile();
 
-  useEffect(() => {
+  //     let roomId = getRoomId(user.uid, uid);
+  //     const docRef = doc(db, 'Rooms', roomId);
+  //     const messageRef = collection(docRef, 'Messages');
+  //     const q = query(messageRef, orderBy('createdAt', 'asc'));
+
+  //     let unsubscribe = onSnapshot(q, snapshot => {
+  //       let allMessages = snapshot.docs.map(doc => {
+  //         const data = doc.data();
+  //         let decryptedText = '';
+  //         let decryptedTel = '';
+  //         let decryptedLocation = '';
+  //         let location = null;
+
+  //         if (sharedSecret) {
+  //           try {
+  //             if (data.text) {
+  //               decryptedText = e2ee.decryptMessage(sharedSecret, data.text, data.nonce);
+  //             }
+  //             if (data.telephoneNumber) {
+  //               decryptedTel = e2ee.decryptMessage(sharedSecret, data.telephoneNumber, data.nonce);
+  //             }
+  //             if (data.location) {
+  //               decryptedLocation = e2ee.decryptMessage(sharedSecret, data.location, data.nonce);
+  //               location = JSON.parse(decryptedLocation);
+  //             }
+  //           } catch (error) {
+  //             console.error('Decryption failed:', error);
+  //           }
+  //         }
+
+  //         return { id: doc.id, ...data, text: decryptedText, telephoneNumber: decryptedTel , location : location};
+  //       });
+  //       setMessages([...allMessages]);
+  //     });
+  //     setRoomId(roomId);
+  //     return unsubscribe;
+  //   } else {
+  //     console.error('User is not authenticated');
+  //   }
+  // }, [user, sharedSecret]);
+  // Changehere
+    useEffect(() => {
     if (user) {
       createRoomIfNotExists();
       fetchUserProfile();
@@ -80,30 +126,7 @@ export default function ChatRoom1({navigation}) {
 
       let unsubscribe = onSnapshot(q, snapshot => {
         let allMessages = snapshot.docs.map(doc => {
-          const data = doc.data();
-          let decryptedText = '';
-          let decryptedTel = '';
-          let decryptedLocation = '';
-          let location = null;
-
-          if (sharedSecret) {
-            try {
-              if (data.text) {
-                decryptedText = e2ee.decryptMessage(sharedSecret, data.text, data.nonce);
-              }
-              if (data.telephoneNumber) {
-                decryptedTel = e2ee.decryptMessage(sharedSecret, data.telephoneNumber, data.nonce);
-              }
-              if (data.location) {
-                decryptedLocation = e2ee.decryptMessage(sharedSecret, data.location, data.nonce);
-                location = JSON.parse(decryptedLocation);
-              }
-            } catch (error) {
-              console.error('Decryption failed:', error);
-            }
-          }
-
-          return { id: doc.id, ...data, text: decryptedText, telephoneNumber: decryptedTel , location : location};
+          return {id: doc.id, ...doc.data()};
         });
         setMessages([...allMessages]);
       });
@@ -112,7 +135,8 @@ export default function ChatRoom1({navigation}) {
     } else {
       console.error('User is not authenticated');
     }
-  }, [user, sharedSecret]);
+  }, [user]);
+
 
   const createRoomIfNotExists = async () => {
     let roomId = getRoomId(user.uid, uid);
@@ -129,7 +153,7 @@ export default function ChatRoom1({navigation}) {
     
     }
   };
-
+  // Changehere
   const fetchOtherUserProfile = async otherUserId => {
     try {
       const userDocRef = doc(db, 'Users', otherUserId);
@@ -140,10 +164,10 @@ export default function ChatRoom1({navigation}) {
           username: userData.username || '',
           photoURL: userData.photoURL || '',
         });
-        const MySecretKey = await e2ee.getMySecretKey();
-        const theirPublicKey = userData.publicKey;
-        const sharedSecret = e2ee.computeSharedSecret(MySecretKey, theirPublicKey);
-        setSharedSecret(sharedSecret);        
+        // const MySecretKey = await e2ee.getMySecretKey();
+        // const theirPublicKey = userData.publicKey;
+        // const sharedSecret = e2ee.computeSharedSecret(MySecretKey, theirPublicKey);
+        // setSharedSecret(sharedSecret);        
       }
     } catch (error) {
       console.error('Error fetching other user profile:', error);
@@ -170,15 +194,15 @@ export default function ChatRoom1({navigation}) {
       console.error('Error fetching user profile:', error);
     }
   };
-
+  // Changehere
   const handleSendMessage = async (message, type = 'text') => {
     let trimmedMessage = message.trim();
     if (!trimmedMessage && type === 'text') return;
-    if (!sharedSecret) {
-      Alert.alert('Error', 'Shared secret not found');
-      return;
-    }
-    const { cipherText, nonce } = e2ee.encryptMessage(sharedSecret, trimmedMessage);
+    // if (!sharedSecret) {
+    //   Alert.alert('Error', 'Shared secret not found');
+    //   return;
+    // }
+    // const { cipherText, nonce } = e2ee.encryptMessage(sharedSecret, trimmedMessage);
 
     try {
       let roomId = getRoomId(user.uid, uid);
@@ -199,8 +223,9 @@ export default function ChatRoom1({navigation}) {
 
       await setDoc(doc(messageRef), {
         userId: user?.uid,
-        text: type === 'text' ? cipherText : '',
-        nonce,
+        text: trimmedMessage,
+        // text: type === 'text' ? cipherText : '',
+        // nonce,
         profileURL: userProfile.profileURL,
         senderName: userProfile.senderName,
         imageUrl: type === 'image' ? imageUrl : '',
@@ -218,13 +243,13 @@ export default function ChatRoom1({navigation}) {
       let roomId = getRoomId(user.uid, uid);
       const docRef = doc(db, 'Rooms', roomId);
       const messageRef = collection(docRef, 'Messages');
-      if (!sharedSecret) {
-        Alert.alert('Error', 'Key not found');
-        return;
-      }
-      console.log(' plain text Location:', location);
-      const encrypted = e2ee.encryptMessage(sharedSecret, JSON.stringify(location));
-      console.log('Encrypted Location:', encrypted);
+      // if (!sharedSecret) {
+      //   Alert.alert('Error', 'Key not found');
+      //   return;
+      // }
+      console.log('Location:', location);
+      // const encrypted = e2ee.encryptMessage(sharedSecret, JSON.stringify(location));
+      // console.log('Encrypted Location:', encrypted);
       await setDoc(doc(messageRef), {
         userId: user?.uid,
         text: '',
@@ -232,8 +257,9 @@ export default function ChatRoom1({navigation}) {
         senderName: userProfile.senderName,
         imageUrl: '',
         createdAt: Timestamp.fromDate(new Date()),
-        location : encrypted.cipherText,
-        nonce : encrypted.nonce,
+        location : location,
+        // location : encrypted.cipherText,
+        // nonce : encrypted.nonce,
       });
     } catch (error) {
       console.error('Error sending location:', error);
@@ -273,7 +299,7 @@ export default function ChatRoom1({navigation}) {
       console.error('Error sending pet data:', error);
     }
   };
-
+  // Changehere
   const handleSendTelephone = telephoneNumber => {
     setTelephoneNumber(telephoneNumber);
     setTelModalVisible(true);
@@ -284,13 +310,13 @@ export default function ChatRoom1({navigation}) {
       let roomId = getRoomId(user.uid, uid);
       const docRef = doc(db, 'Rooms', roomId);
       const messageRef = collection(docRef, 'Messages');
-      if (!sharedSecret) {
-        Alert.alert('Error', 'Key not found');
-        return;
-      }
-      const encrypted = e2ee.encryptMessage(sharedSecret, telephoneNumber);
-      const encTel = encrypted.cipherText;
-      const telnonce = encrypted.nonce;
+      // if (!sharedSecret) {
+      //   Alert.alert('Error', 'Key not found');
+      //   return;
+      // }
+      // const encrypted = e2ee.encryptMessage(sharedSecret, telephoneNumber);
+      // const encTel = encrypted.cipherText;
+      // const telnonce = encrypted.nonce;
       await setDoc(doc(messageRef), {
         userId: user?.uid,
         text: '',
@@ -300,8 +326,8 @@ export default function ChatRoom1({navigation}) {
         createdAt: Timestamp.fromDate(new Date()),
         readed: false,
         selectedPets: '',
-        telephoneNumber: encTel,
-        nonce : telnonce,
+        telephoneNumber: telephoneNumber,
+        // nonce : telnonce,
       });
       setTelephoneNumber('');
       setTelModalVisible(false);
